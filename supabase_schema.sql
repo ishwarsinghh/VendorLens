@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS feature_sets (
 -- ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS requirements (
   id                        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  session_id                UUID,
+  session_id                TEXT NOT NULL DEFAULT 'default',
   feature_name              TEXT NOT NULL,
   is_mandatory              BOOLEAN DEFAULT TRUE,
   max_budget                NUMERIC(15,2),
