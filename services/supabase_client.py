@@ -72,6 +72,9 @@ def get_all_proposals() -> list:
     ).execute().data
 
     for p in proposals:
+        # Add proposal_id alias (frontend expects this key, Supabase returns "id")
+        p["proposal_id"] = p["id"]
+
         # Attach vendor name at top level for convenience
         p["vendor_name"] = p.get("vendors", {}).get("name") if p.get("vendors") else None
 
