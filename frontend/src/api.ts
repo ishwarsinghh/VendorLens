@@ -1,8 +1,7 @@
 // ── VendorLens AI — API Client ───────────────────────────────────────────────
 // All fetch() calls to the FastAPI backend.
-// Set VITE_API_BASE in frontend/.env.local to override the default.
 
-const API_BASE = (import.meta.env.VITE_API_BASE as string) || 'http://localhost:8000';
+const API_BASE = 'https://vendorlens.onrender.com';
 
 export interface UploadResult {
   proposal_id: string;
