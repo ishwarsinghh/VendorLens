@@ -29,19 +29,37 @@ def upsert_vendor(name: str, contact_email: str = None) -> dict:
 # PROPOSALS
 # ─────────────────────────────────────────────
 
+def safe_num(val):
+    """Convert a value to float if possible, else return None."""
+    if val is None:
+        return None
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return None  # Vague strings like "We strive for maximum availability" become None
+
+def safe_int(val):
+    """Convert a value to int if possible, else return None."""
+    if val is None:
+        return None
+    try:
+        return int(float(val))
+    except (ValueError, TypeError):
+        return None
+
 def insert_proposal(vendor_id: str, data: dict, raw_text: str, confidence: float) -> dict:
     """Insert a new proposal record."""
     result = supabase.table("proposals").insert({
         "vendor_id":                vendor_id,
-        "total_cost":               data.get("total_cost"),
-        "implementation_time_weeks": data.get("implementation_time_weeks"),
-        "sla_uptime":               data.get("sla_uptime"),
+        "total_cost":               safe_num(data.get("total_cost")),
+        "implementation_time_weeks": safe_int(data.get("implementation_time_weeks")),
+        "sla_uptime":               safe_num(data.get("sla_uptime")),
         "payment_terms":            data.get("payment_terms"),
-        "warranty_months":          data.get("warranty_months"),
+        "warranty_months":          safe_int(data.get("warranty_months")),
         "support_level":            data.get("support_level"),
-        "contract_length_months":   data.get("contract_length_months"),
-        "penalties_clause":         data.get("penalties_clause", False),
-        "raw_text":                 raw_text[:5000],  # Trim to avoid DB limits
+        "contract_length_months":   safe_int(data.get("contract_length_months")),
+        "penalties_clause":         bool(data.get("penalties_clause", False)),
+        "raw_text":                 raw_text[:5000],
         "extraction_confidence":    confidence
     }).execute()
     return result.data[0]
