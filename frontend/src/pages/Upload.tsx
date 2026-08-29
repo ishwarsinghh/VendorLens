@@ -4,7 +4,7 @@ import Toast, { useToast } from '../components/Toast';
 import VendorCard from '../components/VendorCard';
 import RiskPanel from '../components/RiskPanel';
 
-const MAX_FILES = 4;
+const MAX_FILES = 10;
 
 interface UploadedFile {
   file: File;
