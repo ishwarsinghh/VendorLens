@@ -40,7 +40,7 @@ def extract_proposal_data(proposal_text: str, retries: int = 3) -> dict:
     for attempt in range(retries):
         try:
             response = client.chat.completions.create(
-                model="mixtral-8x7b-32768",
+                model="openai/gpt-oss-120b",
                 messages=[
                     {
                         "role": "system",
