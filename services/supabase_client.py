@@ -85,8 +85,18 @@ def get_all_proposals() -> list:
 
 
 def delete_proposal(proposal_id: str) -> bool:
-    """Delete a proposal and its features (cascade handled by DB)."""
+    """Delete a proposal, its features, and the orphaned vendor record."""
+    # First get the vendor_id before deleting
+    result = supabase.table("proposals").select("vendor_id").eq("id", proposal_id).execute()
+    vendor_id = result.data[0]["vendor_id"] if result.data else None
+
+    # Delete proposal (cascades to feature_sets via FK)
     supabase.table("proposals").delete().eq("id", proposal_id).execute()
+
+    # Delete the vendor record too (no other proposals will reference it)
+    if vendor_id:
+        supabase.table("vendors").delete().eq("id", vendor_id).execute()
+
     return True
 
 
