@@ -35,7 +35,7 @@ def validate_and_fill(extracted: dict, raw_text: str) -> dict:
 
     try:
         response = client.chat.completions.create(
-            model="llama-3.1-70b-versatile",
+            model="llama-3.3-70b-versatile",
             messages=[
                 {
                     "role": "system",

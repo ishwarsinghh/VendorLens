@@ -40,7 +40,7 @@ def extract_proposal_data(proposal_text: str, retries: int = 3) -> dict:
     for attempt in range(retries):
         try:
             response = client.chat.completions.create(
-                model="llama-3.1-70b-versatile",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {
                         "role": "system",
