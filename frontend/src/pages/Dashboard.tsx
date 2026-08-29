@@ -1,139 +1,88 @@
-import { useState, useEffect, useCallback } from 'react';
-import { compareProposals, deleteProposal, type CompareResponse } from '../api';
-import VendorCard from '../components/VendorCard';
-import RiskPanel from '../components/RiskPanel';
-import Toast, { useToast } from '../components/Toast';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 export default function Dashboard() {
-  const [data, setData]         = useState<CompareResponse | null>(null);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState<string | null>(null);
-  const { toasts, addToast, dismiss } = useToast();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const [stats, setStats] = useState({ vendors: 0, highRisk: 0, avgConfidence: 0 });
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await compareProposals();
-      setData(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load data');
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => {
+    fetch('https://vendorlens.onrender.com/api/proposals')
+      .then(r => r.json())
+      .then(data => {
+        if (!data.proposals) return;
+        const vendors = data.proposals.length;
+        const highRisk = data.proposals.filter((p: any) => p.sla_uptime === null).length;
+        const avgConf = vendors > 0 
+          ? Math.round(data.proposals.reduce((acc: number, p: any) => acc + p.extraction_confidence, 0) / vendors * 100)
+          : 0;
+        setStats({ vendors, highRisk, avgConfidence: avgConf });
+      }).catch(() => {});
   }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteProposal(id);
-      addToast('success', 'Vendor removed');
-      load();
-    } catch {
-      addToast('error', 'Failed to remove vendor');
-    }
-  };
-
-  const handleExport = () => window.print();
-
-  // Compute best/worst cost
-  const costs = data?.vendors.map((v) => v.total_cost).filter((c): c is number => c !== null) ?? [];
-  const bestCost  = costs.length > 0 ? Math.min(...costs) : null;
-  const worstCost = costs.length > 0 ? Math.max(...costs) : null;
-
-  const gridClass = (n: number) =>
-    n === 1 ? 'vendor-grid-1' :
-    n === 2 ? 'vendor-grid-2' :
-    n === 3 ? 'vendor-grid-3' : 'vendor-grid-4';
 
   return (
     <div>
-      {/* Header */}
-      <div className="page-header flex items-center justify-between" style={{ flexWrap: 'wrap', gap: 16 }}>
-        <div>
-          <h2>📊 Vendor Comparison Dashboard</h2>
-          <p>AI-powered scoring across cost, SLA, features, and speed.</p>
+      <div className="page-header" style={{ marginBottom: 40 }}>
+        <h2 style={{ fontSize: 32 }}>👋 Welcome back, {user?.name.split(' ')[0] ?? 'User'}!</h2>
+        <p style={{ fontSize: 16 }}>Here is what's happening with your vendor procurements today.</p>
+      </div>
+
+      <div className="dashboard-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24, marginBottom: 48 }}>
+        <div className="metric-card">
+          <div className="metric-icon" style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>🏢</div>
+          <div>
+            <div className="metric-title">Vendors Analyzed</div>
+            <div className="metric-val">{stats.vendors}</div>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button className="btn btn-ghost" onClick={load} disabled={loading}>
-            {loading ? <span className="spinner" /> : '🔄'} Refresh
-          </button>
-          <button className="btn btn-primary" onClick={handleExport} disabled={!data?.vendors.length}>
-            📥 Export PDF
-          </button>
+        
+        <div className="metric-card">
+          <div className="metric-icon" style={{ background: 'var(--danger-bg)', color: 'var(--danger)' }}>⚠</div>
+          <div>
+            <div className="metric-title">High Risk Vendors</div>
+            <div className="metric-val">{stats.highRisk}</div>
+          </div>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-icon" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>🤖</div>
+          <div>
+            <div className="metric-title">AI Extraction Accuracy</div>
+            <div className="metric-val">{stats.avgConfidence}%</div>
+          </div>
         </div>
       </div>
 
-      {/* Error */}
-      {error && (
-        <div style={{
-          background: 'var(--danger-bg)', border: '1px solid var(--danger)',
-          borderRadius: 'var(--radius-md)', padding: '16px 20px', marginBottom: 24,
-          color: 'var(--danger)', fontSize: 14
-        }}>
-          ⚠ {error} &nbsp;
-          <button className="btn btn-ghost btn-sm" onClick={load}>Retry</button>
-        </div>
-      )}
-
-      {/* Loading */}
-      {loading && !data && (
-        <div style={{ textAlign: 'center', padding: '80px 0' }}>
-          <span className="spinner" style={{ width: 40, height: 40, margin: '0 auto 16px', display: 'block' }} />
-          <p style={{ color: 'var(--text-muted)' }}>Loading vendor data...</p>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!loading && !error && data?.vendors.length === 0 && (
-        <div className="empty-state">
-          <span className="icon">📭</span>
-          <h3>No vendors uploaded yet</h3>
-          <p>Upload vendor proposal PDFs to see the comparison dashboard.</p>
-          <button className="btn btn-primary btn-lg" onClick={() => navigate('/upload')}>
-            📤 Upload Proposals
-          </button>
-        </div>
-      )}
-
-      {/* Recommendation Banner */}
-      {data?.recommended_vendor && (
-        <div className="recommendation-banner">
-          <span className="icon">🏆</span>
-          <div>
-            <h3>Recommended: {data.recommended_vendor}</h3>
-            <p>{data.recommendation_reason}</p>
+      <h3 style={{ fontSize: 18, marginBottom: 20 }}>Quick Actions</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
+        <div className="action-card" onClick={() => navigate('/upload')}>
+          <div className="action-icon">📤</div>
+          <div className="action-text">
+            <h4>Upload Proposals</h4>
+            <p>Upload new vendor PDF documents for AI extraction.</p>
           </div>
+          <div className="action-arrow">→</div>
         </div>
-      )}
 
-      {/* Vendor Grid */}
-      {data && data.vendors.length > 0 && (
-        <>
-          <div className={`vendor-grid ${gridClass(data.vendors.length)}`}>
-            {data.vendors.map((vendor) => (
-              <VendorCard
-                key={vendor.proposal_id}
-                vendor={vendor}
-                isBestCost={vendor.total_cost !== null && vendor.total_cost === bestCost}
-                isWorstCost={vendor.total_cost !== null && vendor.total_cost === worstCost && costs.length > 1}
-                onDelete={handleDelete}
-              />
-            ))}
+        <div className="action-card" onClick={() => navigate('/analysis')}>
+          <div className="action-icon">📊</div>
+          <div className="action-text">
+            <h4>Compare Vendors</h4>
+            <p>View side-by-side analysis, scoring, and AI recommendations.</p>
           </div>
+          <div className="action-arrow">→</div>
+        </div>
 
-          {/* Divider */}
-          <div className="divider" style={{ margin: '40px 0 32px' }} />
-
-          {/* Risk Panel */}
-          <RiskPanel vendors={data.vendors} />
-        </>
-      )}
-
-      <Toast toasts={toasts} onDismiss={dismiss} />
+        <div className="action-card" onClick={() => navigate('/history')}>
+          <div className="action-icon">📋</div>
+          <div className="action-text">
+            <h4>View History</h4>
+            <p>Check the history log of all past vendor extractions.</p>
+          </div>
+          <div className="action-arrow">→</div>
+        </div>
+      </div>
     </div>
   );
 }

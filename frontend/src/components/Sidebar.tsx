@@ -1,9 +1,11 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const NAV_LINKS = [
-  { to: '/',             icon: '📊', label: 'Dashboard'    },
+  { to: '/',             icon: '🏠', label: 'Dashboard'    },
   { to: '/upload',       icon: '📤', label: 'Upload'       },
-  { to: '/requirements', icon: '⚙️',  label: 'Requirements' },
+  { to: '/analysis',     icon: '📊', label: 'Analysis'     },
+  { to: '/history',      icon: '📋', label: 'History'      },
+  { to: '/requirements', icon: '⚙️',  label: 'Settings'     },
 ];
 
 export default function Sidebar() {
