@@ -37,48 +37,57 @@ async def upload_proposal(file: UploadFile = File(...)):
     Upload a vendor PDF.
     Extracts structured data using Groq, validates, saves to Supabase.
     """
-    if not file.filename.endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are accepted.")
-
-    # Step 1: Parse PDF
-    file_bytes = await file.read()
-    raw_text = extract_text_from_pdf(file_bytes)
-    smart_text = extract_relevant_pages(file_bytes)   # Token-efficient version
-
-    # Step 2: Extract with Groq
     try:
-        extracted = extract_proposal_data(smart_text)
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        if not file.filename.endswith(".pdf"):
+            raise HTTPException(status_code=400, detail="Only PDF files are accepted.")
 
-    # Step 3: Validate & recover missing fields
-    extracted = validate_and_fill(extracted, raw_text)
+        # Step 1: Parse PDF
+        file_bytes = await file.read()
+        raw_text = extract_text_from_pdf(file_bytes)
+        smart_text = extract_relevant_pages(file_bytes)
 
-    # Step 4: Calculate confidence score
-    confidence = calculate_confidence(extracted)
+        # Step 2: Extract with Groq
+        try:
+            extracted = extract_proposal_data(smart_text)
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=f"Extraction failed: {str(e)}")
 
-    # Step 5: Save to Supabase
-    vendor = upsert_vendor(
-        name=extracted.get("vendor_name", file.filename.replace(".pdf", "")),
-    )
-    proposal = insert_proposal(
-        vendor_id=vendor["id"],
-        data=extracted,
-        raw_text=raw_text,
-        confidence=confidence
-    )
-    insert_features(
-        proposal_id=proposal["id"],
-        features=extracted.get("features", [])
-    )
+        # Step 3: Validate & recover missing fields
+        extracted = validate_and_fill(extracted, raw_text)
 
-    return {
-        "proposal_id":           proposal["id"],
-        "vendor_name":           vendor["name"],
-        "status":                "success" if confidence >= 0.6 else "partial",
-        "extraction_confidence": confidence,
-        "message":               f"Extracted {int(confidence * 100)}% of expected fields."
-    }
+        # Step 4: Calculate confidence score
+        confidence = calculate_confidence(extracted)
+
+        # Step 5: Save to Supabase
+        vendor = upsert_vendor(
+            name=extracted.get("vendor_name", file.filename.replace(".pdf", "")),
+        )
+        proposal = insert_proposal(
+            vendor_id=vendor["id"],
+            data=extracted,
+            raw_text=raw_text,
+            confidence=confidence
+        )
+        insert_features(
+            proposal_id=proposal["id"],
+            features=extracted.get("features", [])
+        )
+
+        return {
+            "proposal_id":           proposal["id"],
+            "vendor_name":           vendor["name"],
+            "status":                "success" if confidence >= 0.6 else "partial",
+            "extraction_confidence": confidence,
+            "message":               f"Extracted {int(confidence * 100)}% of expected fields."
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"UPLOAD ERROR: {error_detail}")
+        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
