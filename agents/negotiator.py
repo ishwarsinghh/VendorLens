@@ -8,22 +8,30 @@ load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 NEGOTIATION_PROMPT = """
-You are an expert procurement negotiator. Analyze the following vendor comparison data and generate a strategic negotiation playbook.
-The data includes multiple vendors, their costs, SLA, implementation time, features, and risk flags.
+You are a sharp, executive-level procurement negotiator. Analyze the vendor data and generate a highly concise, punchy negotiation playbook.
 
-Generate a detailed, actionable negotiation strategy in Markdown format. The playbook should include:
-1. Executive Summary: A quick overview of the leverage we hold based on the comparison.
-2. Vendor-Specific Strategies: For each vendor, provide:
-   - Strengths to acknowledge.
-   - Weaknesses/Risks to exploit or use as leverage (e.g. missing features, poor SLA, high cost compared to others).
-   - Specific questions or demands to make during negotiations.
-3. Cross-Vendor Leverage: How to use Vendor A's offer to negotiate a better deal with Vendor B.
-4. Next Steps: Concrete actions for the procurement team.
+Structure the playbook exactly like this (use beautiful Markdown):
 
-Use clear formatting, bullet points, and bold text for emphasis.
-Do not output anything other than the Markdown playbook.
+# 🎯 Negotiation Strategy
 
-Vendor Comparison Data:
+## 📊 The Leverage Summary
+(2-3 sentences max. What is our core advantage here?)
+
+## 🤝 Vendor Gameplans
+(For each vendor, give exactly 3 bullet points):
+* **Where they win:** (Their strongest point)
+* **The Leverage:** (Their biggest weakness or highest cost compared to competitors)
+* **The Ask:** (Exactly what to demand in the meeting)
+
+## ⚔ Cross-Leverage
+(1-2 sentences on how to pit them against each other)
+
+**RULES:**
+- Be extremely brief and direct. No fluff. No corporate jargon.
+- Use emojis for sections.
+- Keep it under 300 words total.
+
+Data:
 {comparison_data}
 """
 
