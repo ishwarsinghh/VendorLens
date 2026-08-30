@@ -92,7 +92,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
-        <p>Powered by Groq + GPT-OSS 120B</p>
+        <p>Powered by Groq</p>
         <p style={{ marginTop: 4, color: 'var(--accent)', fontWeight: 600 }}>Hackathon 2026 🏆</p>
       </div>
     </aside>
