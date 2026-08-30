@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-def calculate_scores(proposals: List[dict], total_required_features: int = 10) -> List[dict]:
+def calculate_scores(proposals: List[dict], requirements: dict = None) -> List[dict]:
     """
     Deterministic scoring engine. Max score = 100 points.
 
@@ -10,6 +10,12 @@ def calculate_scores(proposals: List[dict], total_required_features: int = 10) -
       - Feature Coverage: 20%  (more features included = better)
       - Speed:            10%  (fewer implementation weeks = better)
     """
+    if not requirements:
+        requirements = {}
+        
+    required_features = requirements.get("required_features", [])
+    # If no features selected, default denominator to 1 to avoid dividing by 0, but max out score
+    total_required_features = len(required_features) if required_features else 10
 
     all_costs = [p.get("total_cost") for p in proposals if p.get("total_cost") is not None]
     all_slas = [p.get("sla_uptime") for p in proposals if p.get("sla_uptime") is not None]
@@ -27,13 +33,20 @@ def calculate_scores(proposals: List[dict], total_required_features: int = 10) -
         cost  = p.get("total_cost")
         sla   = p.get("sla_uptime")
         weeks = p.get("implementation_time_weeks")
-        features_included = sum(
-            1 for f in (p.get("features") or []) if f.get("is_included")
-        )
-
+        if required_features:
+            features_included = sum(
+                1 for f in (p.get("features") or []) 
+                if f.get("is_included") and f.get("feature_name") in required_features
+            )
+            feature_ratio = min(features_included / len(required_features), 1.0)
+        else:
+            features_included = sum(
+                1 for f in (p.get("features") or []) if f.get("is_included")
+            )
+            feature_ratio = min(features_included / 10, 1.0)
+            
         cost_score    = (min_cost / cost)   * 40 if cost  else 0
         sla_score     = (sla / max_sla)     * 30 if sla   else 0
-        feature_ratio = min(features_included / total_required_features, 1.0)
         feature_score = feature_ratio * 20
         speed_score   = (min_weeks / weeks) * 10 if weeks else 0
 

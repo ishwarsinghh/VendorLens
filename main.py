@@ -123,11 +123,14 @@ def compare_proposals(x_user_email: Optional[str] = Header(None)):
             recommendation_reason="No proposals uploaded yet."
         )
 
-    # Score vendors (deterministic math — no LLM)
-    scored = calculate_scores(proposals)
+    # Fetch user requirements
+    requirements = get_requirements(x_user_email)
 
-    # Analyze risks
-    final = analyze_risks(scored)
+    # Score vendors (deterministic math — no LLM)
+    scored = calculate_scores(proposals, requirements)
+
+    # Analyze risks against requirements
+    final = analyze_risks(scored, requirements)
 
     # Top recommendation
     recommended = final[0]["vendor_name"] if final else None
