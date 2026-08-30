@@ -35,7 +35,7 @@ def validate_and_fill(extracted: dict, raw_text: str) -> dict:
 
     try:
         response = client.chat.completions.create(
-            model="openai/gpt-oss-120b",
+            model="qwen/qwen3.8-27b",
             messages=[
                 {
                     "role": "system",

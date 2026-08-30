@@ -44,7 +44,7 @@ def generate_playbook(comparison_data: dict) -> str:
         data_str = json.dumps(comparison_data, indent=2)
         
         response = client.chat.completions.create(
-            model="openai/gpt-oss-120b",
+            model="qwen/qwen3.8-27b",
             messages=[
                 {
                     "role": "system",
