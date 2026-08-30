@@ -1,3 +1,4 @@
+import { getHeaders } from '../api';
 import { useState, useEffect } from 'react';
 
 interface Proposal {
@@ -15,7 +16,7 @@ export default function History() {
   const [loading, setLoading]     = useState(true);
 
   useEffect(() => {
-    fetch('https://vendorlens.onrender.com/api/proposals')
+    fetch('https://vendorlens.onrender.com/api/proposals', { headers: getHeaders() })
       .then(r => r.json())
       .then(d => { setProposals(d.proposals || []); setLoading(false); })
       .catch(() => setLoading(false));

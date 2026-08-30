@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { uploadProposal, compareProposals, deleteProposal, type UploadResult, type CompareResponse } from '../api';
+import { getHeaders, uploadProposal, compareProposals, deleteProposal, type UploadResult, type CompareResponse } from '../api';
 import Toast, { useToast } from '../components/Toast';
 import VendorCard from '../components/VendorCard';
 import RiskPanel from '../components/RiskPanel';
@@ -32,7 +32,7 @@ export default function Upload() {
 
   // Check if there are existing vendors in DB on load
   useEffect(() => {
-    fetch('https://vendorlens.onrender.com/api/proposals')
+    fetch('https://vendorlens.onrender.com/api/proposals', { headers: getHeaders() })
       .then(r => r.json())
       .then(data => setExistingCount(data.count ?? 0))
       .catch(() => {});
@@ -60,10 +60,10 @@ export default function Upload() {
   const clearSession = async () => {
     setClearing(true);
     try {
-      const res = await fetch('https://vendorlens.onrender.com/api/proposals');
+      const res = await fetch('https://vendorlens.onrender.com/api/proposals', { headers: getHeaders() });
       const data = await res.json();
       for (const p of data.proposals) {
-        await fetch(`https://vendorlens.onrender.com/api/proposals/${p.id}`, { method: 'DELETE' });
+        await fetch(`https://vendorlens.onrender.com/api/proposals/${p.id}`, { method: 'DELETE', headers: getHeaders() });
       }
       setExistingCount(0);
       setComparison(null);
@@ -102,9 +102,7 @@ export default function Upload() {
   const analyzeNow = async () => {
     setAnalyzing(true);
     try {
-      const result = await compareProposals();
-      setComparison(result);
-      addToast('success', `Analysis complete! ${result.vendors.length} vendors compared.`);
+      window.location.href = '/analysis';
     } catch {
       addToast('error', 'Analysis failed. Please try again.');
     } finally {

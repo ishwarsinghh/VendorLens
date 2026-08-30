@@ -8,7 +8,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ vendors: 0, highRisk: 0, avgConfidence: 0 });
 
   useEffect(() => {
-    fetch('https://vendorlens.onrender.com/api/proposals')
+    fetch('https://vendorlens.onrender.com/api/proposals', { headers: getHeaders() })
       .then(r => r.json())
       .then(data => {
         if (!data.proposals) return;
