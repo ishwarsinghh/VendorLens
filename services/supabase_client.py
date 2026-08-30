@@ -80,11 +80,11 @@ def insert_proposal(vendor_id: str, data: dict, raw_text: str, confidence: float
 
 def get_all_proposals(user_email: str = None) -> list:
     """Fetch all proposals with their vendor name and features, filtered by user."""
-    query = supabase.table("proposals").select("*, vendors(name, contact_email)")
-    
-    if user_email:
-        query = query.eq("user_email", user_email)
+    if not user_email:
+        return [] # STRICT ISOLATION: No email = no data, prevent data leaks
         
+    query = supabase.table("proposals").select("*, vendors(name, contact_email)")
+    query = query.eq("user_email", user_email)
     proposals = query.execute().data
 
     for p in proposals:
