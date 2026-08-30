@@ -33,7 +33,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
-        <p>Powered by Groq + Llama 3.3</p>
+        <p>Powered by Groq + GPT-OSS 120B</p>
         <p style={{ marginTop: 4, color: 'var(--accent)', fontWeight: 600 }}>Hackathon 2026 🏆</p>
       </div>
     </aside>
