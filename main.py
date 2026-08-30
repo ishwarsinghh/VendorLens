@@ -175,11 +175,11 @@ def remove_proposal(proposal_id: str):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.get("/api/negotiate")
-def negotiate_proposals():
+def negotiate_proposals(x_user_email: Optional[str] = Header(None)):
     """
     Generate an AI-powered negotiation playbook based on current proposals.
     """
-    proposals = get_all_proposals()
+    proposals = get_all_proposals(user_email=x_user_email)
     
     if not proposals:
         return {"playbook": "No proposals uploaded yet to generate a playbook."}

@@ -1,7 +1,7 @@
 // ── VendorLens AI — API Client ───────────────────────────────────────────────
 // All fetch() calls to the FastAPI backend.
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = 'https://vendorlens.onrender.com';
 
 export interface UploadResult {
   proposal_id: string;
@@ -161,7 +161,7 @@ export async function deleteProposal(proposalId: string): Promise<void> {
 
 // ── Generate Negotiation Playbook ────────────────────────────────────────────
 export async function generateNegotiationPlaybook(): Promise<string> {
-  const res = await fetch(`${API_BASE}/api/negotiate`);
+  const res = await fetch(`${API_BASE}/api/negotiate`, { headers: getHeaders() });
   if (!res.ok) throw new Error(`Negotiation AI failed (${res.status})`);
   const data = await res.json();
   return data.playbook;
