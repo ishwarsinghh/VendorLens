@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import ReactMarkdown from 'react-markdown';
+import { useState, useEffect, useCallback } from 'react';
+import NegotiationModal from '../components/NegotiationModal';
 import { compareProposals, deleteProposal, generateNegotiationPlaybook, type CompareResponse } from '../api';
 import VendorCard from '../components/VendorCard';
 import RiskPanel from '../components/RiskPanel';
@@ -13,7 +13,7 @@ export default function Analysis() {
   const [playbookLoading, setPlaybookLoading] = useState(false);
   const [playbookError, setPlaybookError] = useState<string | null>(null);
   const { toasts, addToast, dismiss } = useToast();
-  const playbookRef = useRef<HTMLDivElement>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -33,15 +33,11 @@ export default function Analysis() {
   };
 
   const handleGeneratePlaybook = async () => {
-    if (playbook) {
-      playbookRef.current?.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
+    setIsModalOpen(true);
+    if (playbook) return; // Already generated
 
     setPlaybookLoading(true);
     setPlaybookError(null);
-    setTimeout(() => playbookRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-
     try {
       const result = await generateNegotiationPlaybook();
       setPlaybook(result);
@@ -89,7 +85,7 @@ export default function Analysis() {
 
       {!loading && !error && data?.vendors.length === 0 && (
         <div className="empty-state">
-          <span className="icon">📭</span>
+          <span className="icon">📤</span>
           <h3>No vendors analyzed yet</h3>
           <p>Upload vendor proposal PDFs to see the comparison here.</p>
           <a href="/upload" className="btn btn-primary btn-lg">📤 Upload Proposals</a>
@@ -124,30 +120,13 @@ export default function Analysis() {
 
       <Toast toasts={toasts} onDismiss={dismiss} />
       
-      {(playbook || playbookLoading || playbookError) && (
-        <div ref={playbookRef} style={{ marginTop: 64, padding: 32, background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)' }}>
-          <h2 style={{ color: 'var(--brand)', marginBottom: 24, fontSize: 24 }}>🤖 AI Negotiation Playbook</h2>
-          
-          {playbookLoading && (
-            <div className="loading-center" style={{ padding: 40 }}>
-              <span className="spinner" style={{ width: 40, height: 40 }}></span>
-              <p style={{ marginTop: 16 }}>Analyzing vendor differences and crafting strategy...</p>
-            </div>
-          )}
-
-          {playbookError && (
-            <div className="alert-box alert-danger">
-              ⚠ {playbookError}
-            </div>
-          )}
-
-          {!playbookLoading && !playbookError && playbook && (
-            <div className="markdown-body playbook-content" style={{ fontSize: 16, lineHeight: 1.6 }}>
-              <ReactMarkdown>{playbook}</ReactMarkdown>
-            </div>
-          )}
-        </div>
-      )}
+      <NegotiationModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        playbook={playbook} 
+        loading={playbookLoading} 
+        error={playbookError} 
+      />
     </div>
   );
 }
