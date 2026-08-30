@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import NegotiationModal from '../components/NegotiationModal';
-import { compareProposals, deleteProposal, generateNegotiationPlaybook, type CompareResponse } from '../api';
+import { useNavigate } from 'react-router-dom';
+import { compareProposals, deleteProposal, type CompareResponse } from '../api';
 import VendorCard from '../components/VendorCard';
 import RiskPanel from '../components/RiskPanel';
 import Toast, { useToast } from '../components/Toast';
@@ -9,12 +9,8 @@ export default function Analysis() {
   const [data, setData]       = useState<CompareResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
-  const [playbook, setPlaybook] = useState<string | null>(null);
-  const [playbookLoading, setPlaybookLoading] = useState(false);
-  const [playbookError, setPlaybookError] = useState<string | null>(null);
-  const { toasts, addToast, dismiss } = useToast();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
+        const { toasts, addToast, dismiss } = useToast();
+  
   const load = useCallback(async () => {
     setLoading(true); setError(null);
     try { setData(await compareProposals()); }
@@ -32,20 +28,9 @@ export default function Analysis() {
     } catch { addToast('error', 'Failed to remove vendor'); }
   };
 
-  const handleGeneratePlaybook = async () => {
-    setIsModalOpen(true);
-    if (playbook) return; // Already generated
-
-    setPlaybookLoading(true);
-    setPlaybookError(null);
-    try {
-      const result = await generateNegotiationPlaybook();
-      setPlaybook(result);
-    } catch (err) {
-      setPlaybookError(err instanceof Error ? err.message : 'Failed to generate playbook');
-    } finally {
-      setPlaybookLoading(false);
-    }
+  const navigate = useNavigate();
+  const handleGeneratePlaybook = () => {
+    navigate('/playbook');
   };
 
   const costs    = data?.vendors.map(v => v.total_cost).filter((c): c is number => c !== null) ?? [];
@@ -120,13 +105,7 @@ export default function Analysis() {
 
       <Toast toasts={toasts} onDismiss={dismiss} />
       
-      <NegotiationModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        playbook={playbook} 
-        loading={playbookLoading} 
-        error={playbookError} 
-      />
+      
     </div>
   );
 }

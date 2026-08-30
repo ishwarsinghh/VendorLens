@@ -5,6 +5,7 @@ import Upload from './pages/Upload';
 import Analysis from './pages/Analysis';
 import History from './pages/History';
 import Requirements from './pages/Requirements';
+import Playbook from './pages/Playbook';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -39,6 +40,7 @@ function AppLayout() {
             <Route path="/analysis" element={<Analysis />} />
             <Route path="/history" element={<History />} />
             <Route path="/requirements" element={<Requirements />} />
+            <Route path="/playbook" element={<Playbook />} />
           </Routes>
         </main>
       </div>
