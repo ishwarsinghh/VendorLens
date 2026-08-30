@@ -147,10 +147,15 @@ def compare_proposals(x_user_email: Optional[str] = Header(None)):
 @app.post("/api/requirements")
 def set_requirements(req: RequirementsInput, x_user_email: Optional[str] = Header(None)):
     """Save procurement requirements (budget, SLA, features)."""
-    if not x_user_email:
-        raise HTTPException(status_code=401, detail="User email required for isolation.")
-    result = upsert_requirements(user_email=x_user_email, data=req.dict())
-    return {"status": "saved", **result}
+    try:
+        if not x_user_email:
+            raise HTTPException(status_code=401, detail="User email required for isolation.")
+        result = upsert_requirements(user_email=x_user_email, data=req.dict())
+        return {"status": "saved", **result}
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=400, detail=f"Database error: {str(e)}")
 
 
 @app.get("/api/requirements/{session_id}")
@@ -159,6 +164,17 @@ def fetch_requirements(session_id: str = "default", x_user_email: Optional[str] 
     if not x_user_email:
         raise HTTPException(status_code=401, detail="User email required for isolation.")
     return get_requirements(x_user_email)
+
+@app.post("/api/debug_requirements")
+def debug_req(req: RequirementsInput, x_user_email: Optional[str] = Header(None)):
+    try:
+        if not x_user_email:
+            raise Exception("No email")
+        result = upsert_requirements(user_email=x_user_email, data=req.dict())
+        return {"status": "success", **result}
+    except Exception as e:
+        import traceback
+        return {"status": "error", "error": str(e), "trace": traceback.format_exc()}
 
 
 # ─────────────────────────────────────────────────────────────────────────────

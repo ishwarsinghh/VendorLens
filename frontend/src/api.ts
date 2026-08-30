@@ -145,8 +145,14 @@ export async function saveRequirements(data: RequirementsInput): Promise<void> {
     body: JSON.stringify(data),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || `Save failed (${res.status})`);
+    let errText = `Save failed (${res.status})`;
+    try {
+      const err = await res.json();
+      errText = err.detail || errText;
+    } catch {
+      errText = await res.text();
+    }
+    throw new Error(errText);
   }
 }
 
