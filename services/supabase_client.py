@@ -143,17 +143,21 @@ def insert_features(proposal_id: str, features: list) -> None:
 # REQUIREMENTS
 # ─────────────────────────────────────────────
 
-def upsert_requirements(session_id: str, data: dict) -> dict:
-    """Save or overwrite requirements for this session."""
-    # Delete existing for this session first
-    supabase.table("requirements").delete().eq("session_id", session_id).execute()
+def upsert_requirements(user_email: str, data: dict) -> dict:
+    """Save or overwrite requirements for this user."""
+    if not user_email:
+        raise ValueError("user_email is required to save requirements")
+        
+    # Delete existing for this user first
+    supabase.table("requirements").delete().eq("session_id", user_email).execute()
 
     rows = []
+    features = data.get("required_features") or ["NONE"]
 
     # Insert feature requirements
-    for feature in data.get("required_features", []):
+    for feature in features:
         rows.append({
-            "session_id":   session_id,
+            "session_id":   user_email,
             "feature_name": feature,
             "is_mandatory": True,
             "max_budget":   data.get("max_budget"),
@@ -164,13 +168,16 @@ def upsert_requirements(session_id: str, data: dict) -> dict:
     if rows:
         supabase.table("requirements").insert(rows).execute()
 
-    return {"session_id": session_id, "saved": len(rows)}
+    return {"session_id": user_email, "saved": len(rows)}
 
 
-def get_requirements(session_id: str) -> dict:
-    """Fetch requirements for a session."""
+def get_requirements(user_email: str) -> dict:
+    """Fetch requirements for a user."""
+    if not user_email:
+        return {}
+        
     rows = supabase.table("requirements").select("*").eq(
-        "session_id", session_id
+        "session_id", user_email
     ).execute().data
 
     if not rows:
@@ -180,5 +187,5 @@ def get_requirements(session_id: str) -> dict:
         "max_budget":               rows[0].get("max_budget"),
         "min_sla_uptime":           rows[0].get("min_sla_uptime"),
         "max_implementation_weeks": rows[0].get("max_implementation_weeks"),
-        "required_features":        [r["feature_name"] for r in rows]
+        "required_features":        [r["feature_name"] for r in rows if r["feature_name"] != "NONE"]
     }
