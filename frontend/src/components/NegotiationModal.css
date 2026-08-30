@@ -1,0 +1,43 @@
+.playbook-modal {
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.playbook-content {
+  overflow-y: auto;
+  max-height: calc(90vh - 140px); /* Adjust based on header/footer size */
+  padding: 16px 24px;
+  background-color: var(--surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-family: var(--font-main);
+  line-height: 1.6;
+  color: var(--text-main);
+}
+
+.playbook-content h1, .playbook-content h2, .playbook-content h3 {
+  color: var(--brand);
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.playbook-content h1:first-child, .playbook-content h2:first-child {
+  margin-top: 0;
+}
+
+.playbook-content ul {
+  padding-left: 20px;
+  margin-bottom: 1em;
+}
+
+.playbook-content li {
+  margin-bottom: 0.5em;
+}
+
+.playbook-content strong {
+  font-weight: 600;
+  color: var(--text-main);
+}

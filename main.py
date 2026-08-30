@@ -8,6 +8,7 @@ from agents.extractor import extract_proposal_data
 from agents.validator import validate_and_fill, calculate_confidence
 from agents.scorer import calculate_scores, get_recommendation_reason
 from agents.risk_analyzer import analyze_risks
+from agents.negotiator import generate_playbook
 from services.supabase_client import (
     create_vendor,
     upsert_vendor, insert_proposal, insert_features,
@@ -167,6 +168,29 @@ def remove_proposal(proposal_id: str):
     if success:
         return {"status": "deleted", "proposal_id": proposal_id}
     raise HTTPException(status_code=404, detail="Proposal not found.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ENDPOINT 6: Generate Negotiation Playbook
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/api/negotiate")
+def negotiate_proposals():
+    """
+    Generate an AI-powered negotiation playbook based on current proposals.
+    """
+    proposals = get_all_proposals()
+    
+    if not proposals:
+        return {"playbook": "No proposals uploaded yet to generate a playbook."}
+        
+    # Score vendors and run risk analysis first to get the same data the frontend sees
+    scored = calculate_scores(proposals)
+    final_data = analyze_risks(scored)
+    
+    playbook_md = generate_playbook(final_data)
+    
+    return {"playbook": playbook_md}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
