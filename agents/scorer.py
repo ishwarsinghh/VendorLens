@@ -11,19 +11,17 @@ def calculate_scores(proposals: List[dict], total_required_features: int = 10) -
       - Speed:            10%  (fewer implementation weeks = better)
     """
 
-    # Filter out proposals with missing critical fields
-    valid = [p for p in proposals if p.get("total_cost") and p.get("sla_uptime")]
+    all_costs = [p.get("total_cost") for p in proposals if p.get("total_cost") is not None]
+    all_slas = [p.get("sla_uptime") for p in proposals if p.get("sla_uptime") is not None]
+    all_weeks = [p.get("implementation_time_weeks") for p in proposals if p.get("implementation_time_weeks") is not None]
 
-    if not valid:
+    if not all_costs and not all_slas and not all_weeks:
         return proposals  # Return as-is if nothing to compare
 
     # Reference values for relative scoring
-    min_cost  = min(p["total_cost"] for p in valid)
-    max_sla   = max(p["sla_uptime"] for p in valid)
-    min_weeks = min(
-        p["implementation_time_weeks"] for p in valid
-        if p.get("implementation_time_weeks")
-    ) if any(p.get("implementation_time_weeks") for p in valid) else 1
+    min_cost  = min(all_costs) if all_costs else 1
+    max_sla   = max(all_slas) if all_slas else 1
+    min_weeks = min(all_weeks) if all_weeks else 1
 
     for p in proposals:
         cost  = p.get("total_cost")
@@ -35,10 +33,14 @@ def calculate_scores(proposals: List[dict], total_required_features: int = 10) -
 
         cost_score    = (min_cost / cost)   * 40 if cost  else 0
         sla_score     = (sla / max_sla)     * 30 if sla   else 0
-        feature_score = (features_included / total_required_features) * 20
+        feature_ratio = min(features_included / total_required_features, 1.0)
+        feature_score = feature_ratio * 20
         speed_score   = (min_weeks / weeks) * 10 if weeks else 0
 
         total = cost_score + sla_score + feature_score + speed_score
+        
+        # Hard cap the total score at 100 just in case
+        total = min(total, 100)
 
         p["score"] = round(total, 2)
         p["score_breakdown"] = {

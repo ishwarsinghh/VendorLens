@@ -3,28 +3,6 @@
 
 const API_BASE = 'https://vendorlens.onrender.com';
 
-
-export function getUploadHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {};
-  const userStr = localStorage.getItem('vl_user');
-  if (userStr) {
-    try {
-      const user = JSON.parse(userStr);
-      if (user.email) {
-        headers['x-user-email'] = user.email;
-      }
-    } catch (e) {}
-  }
-  return headers;
-}
-
-export function getHeaders(): Record<string, string> {
-  const headers = getUploadHeaders();
-  headers['Content-Type'] = 'application/json';
-  return headers;
-}
-
-
 export interface UploadResult {
   proposal_id: string;
   vendor_name: string;
@@ -88,6 +66,31 @@ export interface RequirementsInput {
   max_implementation_weeks?: number | null;
   required_features: string[];
 }
+
+export const getHeaders = () => {
+  const userStr = localStorage.getItem('vl_user');
+  let email = '';
+  if (userStr) {
+    try { email = JSON.parse(userStr).email; } catch {}
+  }
+  return {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    ...(email && { 'x-user-email': email })
+  };
+};
+
+export const getUploadHeaders = () => {
+  const userStr = localStorage.getItem('vl_user');
+  let email = '';
+  if (userStr) {
+    try { email = JSON.parse(userStr).email; } catch {}
+  }
+  return {
+    'Accept': 'application/json',
+    ...(email && { 'x-user-email': email })
+  };
+};
 
 // ── Upload PDF ───────────────────────────────────────────────────────────────
 export async function uploadProposal(
