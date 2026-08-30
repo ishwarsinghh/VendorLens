@@ -1,7 +1,29 @@
 // ── VendorLens AI — API Client ───────────────────────────────────────────────
 // All fetch() calls to the FastAPI backend.
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = 'https://vendorlens.onrender.com';
+
+
+export function getUploadHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  const userStr = localStorage.getItem('vl_user');
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      if (user.email) {
+        headers['x-user-email'] = user.email;
+      }
+    } catch (e) {}
+  }
+  return headers;
+}
+
+export function getHeaders(): Record<string, string> {
+  const headers = getUploadHeaders();
+  headers['Content-Type'] = 'application/json';
+  return headers;
+}
+
 
 export interface UploadResult {
   proposal_id: string;
@@ -66,31 +88,6 @@ export interface RequirementsInput {
   max_implementation_weeks?: number | null;
   required_features: string[];
 }
-
-export const getHeaders = () => {
-  const userStr = localStorage.getItem('vl_user');
-  let email = '';
-  if (userStr) {
-    try { email = JSON.parse(userStr).email; } catch {}
-  }
-  return {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-    ...(email && { 'x-user-email': email })
-  };
-};
-
-export const getUploadHeaders = () => {
-  const userStr = localStorage.getItem('vl_user');
-  let email = '';
-  if (userStr) {
-    try { email = JSON.parse(userStr).email; } catch {}
-  }
-  return {
-    'Accept': 'application/json',
-    ...(email && { 'x-user-email': email })
-  };
-};
 
 // ── Upload PDF ───────────────────────────────────────────────────────────────
 export async function uploadProposal(
@@ -161,7 +158,7 @@ export async function deleteProposal(proposalId: string): Promise<void> {
 
 // ── Generate Negotiation Playbook ────────────────────────────────────────────
 export async function generateNegotiationPlaybook(): Promise<string> {
-  const res = await fetch(`${API_BASE}/api/negotiate`);
+  const res = await fetch(`${API_BASE}/api/negotiate`, { headers: getHeaders() });
   if (!res.ok) throw new Error(`Negotiation AI failed (${res.status})`);
   const data = await res.json();
   return data.playbook;
