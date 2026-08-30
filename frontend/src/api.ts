@@ -78,6 +78,12 @@ export async function uploadProposal(
 
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${API_BASE}/api/upload`);
+    
+    // Attach user email for backend isolation
+    const headers = getUploadHeaders();
+    if (headers['x-user-email']) {
+      xhr.setRequestHeader('x-user-email', headers['x-user-email']);
+    }
 
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && onProgress) {
@@ -101,7 +107,7 @@ export async function uploadProposal(
 
 // ── Compare All Proposals ────────────────────────────────────────────────────
 export async function compareProposals(): Promise<CompareResponse> {
-  const res = await fetch(`${API_BASE}/api/compare`);
+  const res = await fetch(`${API_BASE}/api/compare`, { headers: getHeaders() });
   if (!res.ok) throw new Error(`Compare failed (${res.status})`);
   return res.json();
 }
@@ -110,7 +116,7 @@ export async function compareProposals(): Promise<CompareResponse> {
 export async function saveRequirements(data: RequirementsInput): Promise<void> {
   const res = await fetch(`${API_BASE}/api/requirements`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders(),
     body: JSON.stringify(data),
   });
   if (!res.ok) {
@@ -123,6 +129,7 @@ export async function saveRequirements(data: RequirementsInput): Promise<void> {
 export async function deleteProposal(proposalId: string): Promise<void> {
   const res = await fetch(`${API_BASE}/api/proposals/${proposalId}`, {
     method: 'DELETE',
+    headers: getHeaders(),
   });
   if (!res.ok) throw new Error(`Delete failed (${res.status})`);
 }

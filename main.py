@@ -1,5 +1,6 @@
 import os
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Header
+from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
@@ -8,6 +9,7 @@ from agents.validator import validate_and_fill, calculate_confidence
 from agents.scorer import calculate_scores, get_recommendation_reason
 from agents.risk_analyzer import analyze_risks
 from services.supabase_client import (
+    create_vendor,
     upsert_vendor, insert_proposal, insert_features,
     get_all_proposals, delete_proposal,
     upsert_requirements, get_requirements
@@ -32,7 +34,7 @@ app.add_middleware(
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.post("/api/upload")
-async def upload_proposal(file: UploadFile = File(...)):
+async def upload_proposal(file: UploadFile = File(...), x_user_email: Optional[str] = Header(None)):
     """
     Upload a vendor PDF.
     Extracts structured data using Groq, validates, saves to Supabase.
@@ -59,14 +61,14 @@ async def upload_proposal(file: UploadFile = File(...)):
         confidence = calculate_confidence(extracted)
 
         # Step 5: Save to Supabase
-        vendor = upsert_vendor(
-            name=extracted.get("vendor_name", file.filename.replace(".pdf", "")),
-        )
+        vendor_name = extracted.get("vendor_name", file.filename.replace(".pdf", ""))
+        vendor_id = create_vendor(name=vendor_name, user_email=x_user_email)
         proposal = insert_proposal(
-            vendor_id=vendor["id"],
+            vendor_id=vendor_id,
             data=extracted,
             raw_text=raw_text,
-            confidence=confidence
+            confidence=confidence,
+            user_email=x_user_email
         )
         insert_features(
             proposal_id=proposal["id"],
@@ -75,7 +77,7 @@ async def upload_proposal(file: UploadFile = File(...)):
 
         return {
             "proposal_id":           proposal["id"],
-            "vendor_name":           vendor["name"],
+            "vendor_name":           vendor_name,
             "status":                "success" if confidence >= 0.6 else "partial",
             "extraction_confidence": confidence,
             "message":               f"Extracted {int(confidence * 100)}% of expected fields."
@@ -95,9 +97,9 @@ async def upload_proposal(file: UploadFile = File(...)):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.get("/api/proposals")
-def list_proposals():
+def list_proposals(x_user_email: Optional[str] = Header(None)):
     """List all uploaded proposals from Supabase."""
-    proposals = get_all_proposals()
+    proposals = get_all_proposals(user_email=x_user_email)
     return {"proposals": proposals, "count": len(proposals)}
 
 
@@ -106,12 +108,12 @@ def list_proposals():
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.get("/api/compare")
-def compare_proposals():
+def compare_proposals(x_user_email: Optional[str] = Header(None)):
     """
     Fetch all proposals, score them deterministically,
     run risk analysis, and return a ranked comparison.
     """
-    proposals = get_all_proposals()
+    proposals = get_all_proposals(user_email=x_user_email)
 
     if not proposals:
         return CompareResponse(

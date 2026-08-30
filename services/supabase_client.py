@@ -13,6 +13,15 @@ supabase: Client = create_client(
 # VENDORS
 # ─────────────────────────────────────────────
 
+def create_vendor(name: str, user_email: str = None) -> str:
+    """Create a new vendor and return its UUID."""
+    data = {"name": name}
+    if user_email:
+        data["user_email"] = user_email
+        
+    result = supabase.table("vendors").insert(data).execute()
+    return result.data[0]["id"]
+
 def upsert_vendor(name: str, contact_email: str = None) -> dict:
     """Insert or fetch existing vendor by name."""
     existing = supabase.table("vendors").select("*").eq("name", name).execute()
@@ -47,9 +56,9 @@ def safe_int(val):
     except (ValueError, TypeError):
         return None
 
-def insert_proposal(vendor_id: str, data: dict, raw_text: str, confidence: float) -> dict:
+def insert_proposal(vendor_id: str, data: dict, raw_text: str, confidence: float, user_email: str = None) -> dict:
     """Insert a new proposal record."""
-    result = supabase.table("proposals").insert({
+    insert_data = {
         "vendor_id":                vendor_id,
         "total_cost":               safe_num(data.get("total_cost")),
         "implementation_time_weeks": safe_int(data.get("implementation_time_weeks")),
@@ -61,15 +70,22 @@ def insert_proposal(vendor_id: str, data: dict, raw_text: str, confidence: float
         "penalties_clause":         bool(data.get("penalties_clause", False)),
         "raw_text":                 raw_text[:5000],
         "extraction_confidence":    confidence
-    }).execute()
+    }
+    if user_email:
+        insert_data["user_email"] = user_email
+        
+    result = supabase.table("proposals").insert(insert_data).execute()
     return result.data[0]
 
 
-def get_all_proposals() -> list:
-    """Fetch all proposals with their vendor name and features."""
-    proposals = supabase.table("proposals").select(
-        "*, vendors(name, contact_email)"
-    ).execute().data
+def get_all_proposals(user_email: str = None) -> list:
+    """Fetch all proposals with their vendor name and features, filtered by user."""
+    query = supabase.table("proposals").select("*, vendors(name, contact_email)")
+    
+    if user_email:
+        query = query.eq("user_email", user_email)
+        
+    proposals = query.execute().data
 
     for p in proposals:
         # Add proposal_id alias (frontend expects this key, Supabase returns "id")
