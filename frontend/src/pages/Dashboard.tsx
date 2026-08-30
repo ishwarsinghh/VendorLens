@@ -1,6 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { getHeaders } from '../api';
 
 export default function Dashboard() {
   const { user } = useAuth();

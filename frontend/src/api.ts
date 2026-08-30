@@ -67,6 +67,31 @@ export interface RequirementsInput {
   required_features: string[];
 }
 
+export const getHeaders = () => {
+  const userStr = localStorage.getItem('vl_user');
+  let email = '';
+  if (userStr) {
+    try { email = JSON.parse(userStr).email; } catch {}
+  }
+  return {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    ...(email && { 'x-user-email': email })
+  };
+};
+
+export const getUploadHeaders = () => {
+  const userStr = localStorage.getItem('vl_user');
+  let email = '';
+  if (userStr) {
+    try { email = JSON.parse(userStr).email; } catch {}
+  }
+  return {
+    'Accept': 'application/json',
+    ...(email && { 'x-user-email': email })
+  };
+};
+
 // ── Upload PDF ───────────────────────────────────────────────────────────────
 export async function uploadProposal(
   file: File,

@@ -1,5 +1,5 @@
-import { getHeaders } from '../api';
 import { useState, useEffect } from 'react';
+import { getHeaders } from '../api';
 
 interface Proposal {
   id: string;
