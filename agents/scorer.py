@@ -35,10 +35,14 @@ def calculate_scores(proposals: List[dict], total_required_features: int = 10) -
 
         cost_score    = (min_cost / cost)   * 40 if cost  else 0
         sla_score     = (sla / max_sla)     * 30 if sla   else 0
-        feature_score = (features_included / total_required_features) * 20
+        feature_ratio = min(features_included / total_required_features, 1.0)
+        feature_score = feature_ratio * 20
         speed_score   = (min_weeks / weeks) * 10 if weeks else 0
 
         total = cost_score + sla_score + feature_score + speed_score
+        
+        # Hard cap the total score at 100 just in case
+        total = min(total, 100)
 
         p["score"] = round(total, 2)
         p["score_breakdown"] = {
